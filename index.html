@@ -1,111 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord Messenger</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #36393f;
-      color: #ffffff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .card {
-      background-color: #2f3136;
-      padding: 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      width: 100%;
-      max-width: 400px;
-    }
-    h2 {
-      margin-top: 0;
-      color: #5865f2;
-    }
-    textarea {
-      width: 100%;
-      height: 100px;
-      padding: 10px;
-      border-radius: 4px;
-      border: 1px solid #202225;
-      background-color: #40444b;
-      color: #fff;
-      font-size: 14px;
-      resize: none;
-      box-sizing: border-box;
-      margin-bottom: 12px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #5865f2;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #4752c4;
-    }
-    #status {
-      margin-top: 10px;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
+require('dotenv').config();
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
+const express = require('express');
 
-  <div class="card">
-    <h2>Send to Discord</h2>
-    <textarea id="message" placeholder="Type your message here..."></textarea>
-    <button onclick="sendMessage()">Send Message</button>
-    <p id="status"></p>
-  </div>
+const app = express();
+app.use(express.json());
 
-  <script>
-    const WEBHOOK_URL = "https://discord.com/api/webhooks/1550955330543034419/_ER-T65Hr1l8FTNmO_tIa3Kn_fPg4z4AFvUVTXeKI5tdjPGoLyZ3oo5O1GX_FoRSQ2dc";
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
 
-    async function sendMessage() {
-      const text = document.getElementById("message").value;
-      const status = document.getElementById("status");
+// --- COMMAND LISTENER (,c command) ---
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages or messages without prefix
+  if (message.author.bot || !message.content.startsWith(',c')) return;
 
-      if (!text.trim()) {
-        status.style.color = "#f04747";
-        status.innerText = "Please enter a message!";
-        return;
-      }
+  // Check if user has permission to manage messages
+  if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+    return message.reply("You don't have permission to manage messages!");
+  }
 
-      status.style.color = "#faa61a";
-      status.innerText = "Sending...";
+  const args = message.content.trim().split(/ +/);
+  let amount = parseInt(args[1]);
 
-      try {
-        const response = await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: text })
-        });
+  // If no number is given, default to clearing 100 messages (Discord bulkDelete max per request)
+  if (isNaN(amount)) {
+    amount = 100;
+  } else {
+    // Account for the user's command message itself
+    amount = amount + 1;
+  }
 
-        if (response.ok) {
-          status.style.color = "#43b581";
-          status.innerText = "Message sent successfully!";
-          document.getElementById("message").value = "";
-        } else {
-          status.style.color = "#f04747";
-          status.innerText = "Failed to send message.";
+  if (amount < 1 || amount > 100) {
+    return message.reply('Please specify a number between 1 and 99.');
+  }
+
+  try {
+    const deleted = await message.channel.bulkDelete(amount, true);
+    const count = deleted.size - 1 > 0 ? deleted.size - 1 : deleted.size;
+    
+    const reply = await message.channel.send(`🧹 Successfully cleared **${count}** messages!`);
+    
+    // Auto-delete the bot's confirmation message after 3 seconds
+    setTimeout(() => reply.delete().catch(() => {}), 3000);
+  } catch (error) {
+    console.error('Failed to clear messages:', error);
+    message.reply('There was an error trying to delete messages in this channel. (Note: Discord cannot bulk delete messages older than 14 days).');
+  }
+});
+
+// --- GITHUB WEBHOOK LISTENER ---
+app.post('/github-webhook', async (req, res) => {
+  const event = req.headers['x-github-event'];
+  const payload = req.body;
+
+  try {
+    const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
+    if (!channel) return res.status(404).send('Channel not found');
+
+    if (event === 'push') {
+      const pusher = payload.pusher.name;
+      const repo = payload.repository.name;
+      const branch = payload.ref.replace('refs/heads/', '');
+      const commits = payload.commits || [];
+
+      for (const commit of commits) {
+        const htmlFiles = [
+          ...commit.added,
+          ...commit.modified,
+          ...commit.removed
+        ].filter(file => file.endsWith('.html'));
+
+        if (htmlFiles.length > 0) {
+          const embed = new EmbedBuilder()
+            .setColor(0xE34F26)
+            .setTitle(`📄 HTML Update in ${repo}`)
+            .setURL(commit.url)
+            .setAuthor({ name: pusher, iconURL: payload.sender.avatar_url })
+            .setDescription(`**Commit message:** ${commit.message}\n**Branch:** \`${branch}\``)
+            .addFields(
+              { name: 'Changed HTML Files', value: htmlFiles.map(f => `\`${f}\``).join('\n') }
+            )
+            .setTimestamp(new Date(commit.timestamp));
+
+          await channel.send({ embeds: [embed] });
         }
-      } catch (err) {
-        status.style.color = "#f04747";
-        status.innerText = "Error connecting to Discord.";
       }
     }
-  </script>
 
-</body>
-</html>
+    res.status(200).send('Webhook processed');
+  } catch (error) {
+    console.error('Error delivering message:', error);
+    res.status(500).send('Server Error');
+  }
+});
+
+client.once('ready', () => {
+  console.log(`Bot logged in as ${client.user.tag}`);
+  app.listen(process.env.PORT || 3000, () => {
+    console.log(`Webhook server running on port ${process.env.PORT || 3000}`);
+  });
+});
+
+client.login(process.env.DISCORD_BOT_TOKEN);
