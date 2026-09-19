@@ -1,1 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Messenger</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #36393f;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background-color: #2f3136;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #5865f2;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #202225;
+      background-color: #40444b;
+      color: #fff;
+      font-size: 14px;
+      resize: none;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #5865f2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4752c4;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
 
+  <div class="card">
+    <h2>Send to Discord</h2>
+    <textarea id="message" placeholder="Type your message here..."></textarea>
+    <button onclick="sendMessage()">Send Message</button>
+    <p id="status"></p>
+  </div>
+
+  <script>
+    // Paste your Discord Webhook URL inside the quotes below:
+    const WEBHOOK_URL = "YOUR_DISCORD_WEBHOOK_URL_HERE";
+
+    async function sendMessage() {
+      const text = document.getElementById("message").value;
+      const status = document.getElementById("status");
+
+      if (!text.trim()) {
+        status.style.color = "#f04747";
+        status.innerText = "Please enter a message!";
+        return;
+      }
+
+      status.style.color = "#faa61a";
+      status.innerText = "Sending...";
+
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: text })
+        });
+
+        if (response.ok) {
+          status.style.color = "#43b581";
+          status.innerText = "Message sent successfully!";
+          document.getElementById("message").value = "";
+        } else {
+          status.style.color = "#f04747";
+          status.innerText = "Failed to send message.";
+        }
+      } catch (err) {
+        status.style.color = "#f04747";
+        status.innerText = "Error connecting to Discord.";
+      }
+    }
+  </script>
+
+</body>
+</html>
