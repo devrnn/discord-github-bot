@@ -1,108 +1,290 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const express = require('express');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Hub Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
 
-const app = express();
-app.use(express.json());
+    body {
+      background-color: #1e1f22;
+      color: #dbdee1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 440px;
+      padding: 16px;
+    }
 
-// --- COMMAND LISTENER (,c command) ---
-client.on('messageCreate', async (message) => {
-  // Ignore bot messages or messages without prefix
-  if (message.author.bot || !message.content.startsWith(',c')) return;
+    .screen.active {
+      display: block;
+    }
 
-  // Check if user has permission to manage messages
-  if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-    return message.reply("You don't have permission to manage messages!");
-  }
+    .card {
+      background-color: #2b2d31;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
 
-  const args = message.content.trim().split(/ +/);
-  let amount = parseInt(args[1]);
+    .brand-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
 
-  // If no number is given, default to clearing 100 messages (Discord bulkDelete max per request)
-  if (isNaN(amount)) {
-    amount = 100;
-  } else {
-    // Account for the user's command message itself
-    amount = amount + 1;
-  }
+    .brand-header h1 {
+      color: #f2f3f5;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
 
-  if (amount < 1 || amount > 100) {
-    return message.reply('Please specify a number between 1 and 99.');
-  }
+    .brand-header p {
+      color: #949ba4;
+      font-size: 14px;
+    }
 
-  try {
-    const deleted = await message.channel.bulkDelete(amount, true);
-    const count = deleted.size - 1 > 0 ? deleted.size - 1 : deleted.size;
-    
-    const reply = await message.channel.send(`🧹 Successfully cleared **${count}** messages!`);
-    
-    // Auto-delete the bot's confirmation message after 3 seconds
-    setTimeout(() => reply.delete().catch(() => {}), 3000);
-  } catch (error) {
-    console.error('Failed to clear messages:', error);
-    message.reply('There was an error trying to delete messages in this channel. (Note: Discord cannot bulk delete messages older than 14 days).');
-  }
-});
+    .form-group {
+      margin-bottom: 20px;
+    }
 
-// --- GITHUB WEBHOOK LISTENER ---
-app.post('/github-webhook', async (req, res) => {
-  const event = req.headers['x-github-event'];
-  const payload = req.body;
+    label {
+      display: block;
+      color: #b5bac1;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
 
-  try {
-    const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
-    if (!channel) return res.status(404).send('Channel not found');
+    input, textarea {
+      width: 100%;
+      background-color: #1e1f22;
+      border: 1px solid #111214;
+      border-radius: 4px;
+      padding: 12px;
+      color: #dbdee1;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
 
-    if (event === 'push') {
-      const pusher = payload.pusher.name;
-      const repo = payload.repository.name;
-      const branch = payload.ref.replace('refs/heads/', '');
-      const commits = payload.commits || [];
+    input:focus, textarea:focus {
+      border-color: #5865f2;
+    }
 
-      for (const commit of commits) {
-        const htmlFiles = [
-          ...commit.added,
-          ...commit.modified,
-          ...commit.removed
-        ].filter(file => file.endsWith('.html'));
+    textarea {
+      height: 90px;
+      resize: none;
+    }
 
-        if (htmlFiles.length > 0) {
-          const embed = new EmbedBuilder()
-            .setColor(0xE34F26)
-            .setTitle(`📄 HTML Update in ${repo}`)
-            .setURL(commit.url)
-            .setAuthor({ name: pusher, iconURL: payload.sender.avatar_url })
-            .setDescription(`**Commit message:** ${commit.message}\n**Branch:** \`${branch}\``)
-            .addFields(
-              { name: 'Changed HTML Files', value: htmlFiles.map(f => `\`${f}\``).join('\n') }
-            )
-            .setTimestamp(new Date(commit.timestamp));
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #5865f2;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
 
-          await channel.send({ embeds: [embed] });
+    .btn:hover {
+      background-color: #4752c4;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #1e1f22;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .user-badge span {
+      font-size: 14px;
+      font-weight: 600;
+      color: #5865f2;
+    }
+
+    .logout-link {
+      color: #f23f43;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .log-container {
+      margin-top: 20px;
+      background-color: #1e1f22;
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .log-item {
+      font-size: 12px;
+      color: #949ba4;
+      padding: 4px 0;
+      border-bottom: 1px solid #2b2d31;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .status-msg {
+      font-size: 13px;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="screen active">
+    <div class="card">
+      <div class="brand-header">
+        <h1>Welcome Back!</h1>
+        <p>Enter a username to join the dashboard session.</p>
+      </div>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="e.g. Alex" />
+      </div>
+      <button class="btn" onclick="login()">Enter Dashboard</button>
+      <p id="loginStatus" class="status-msg"></p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div id="dashboardScreen" class="screen">
+    <div class="card">
+      <div class="user-badge">
+        <span>Logged in as: <strong id="displayUser"></strong></span>
+        <span class="logout-link" onclick="logout()">Logout</span>
+      </div>
+
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" placeholder="Type your message to Discord..."></textarea>
+      </div>
+
+      <button class="btn" onclick="sendMessage()">Send Message</button>
+      <p id="sendStatus" class="status-msg"></p>
+
+      <label style="margin-top: 20px;">Sent Messages Log</label>
+      <div id="logFeed" class="log-container">
+        <div class="log-item">No messages sent in this session yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1550955330543034419/_ER-T65Hr1l8FTNmO_tIa3Kn_fPg4z4AFvUVTXeKI5tdjPGoLyZ3oo5O1GX_FoRSQ2dc";
+
+    let currentUser = localStorage.getItem("discord_user") || "";
+
+    if (currentUser) {
+      showDashboard();
+    }
+
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const status = document.getElementById("loginStatus");
+
+      if (!user) {
+        status.style.color = "#f23f43";
+        status.innerText = "Please enter a username!";
+        return;
+      }
+
+      currentUser = user;
+      localStorage.setItem("discord_user", user);
+      showDashboard();
+    }
+
+    function logout() {
+      localStorage.removeItem("discord_user");
+      currentUser = "";
+      document.getElementById("dashboardScreen").classList.remove("active");
+      document.getElementById("loginScreen").classList.add("active");
+    }
+
+    function showDashboard() {
+      document.getElementById("displayUser").innerText = currentUser;
+      document.getElementById("loginScreen").classList.remove("active");
+      document.getElementById("dashboardScreen").classList.add("active");
+    }
+
+    async function sendMessage() {
+      const text = document.getElementById("message").value.trim();
+      const status = document.getElementById("sendStatus");
+
+      if (!text) {
+        status.style.color = "#f23f43";
+        status.innerText = "Please type a message!";
+        return;
+      }
+
+      status.style.color = "#f0b232";
+      status.innerText = "Sending to Discord...";
+
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: currentUser,
+            content: text
+          })
+        });
+
+        if (response.ok) {
+          status.style.color = "#23a55a";
+          status.innerText = "Sent successfully!";
+          addLog(text);
+          document.getElementById("message").value = "";
+        } else {
+          status.style.color = "#f23f43";
+          status.innerText = "Error sending message.";
         }
+      } catch (err) {
+        status.style.color = "#f23f43";
+        status.innerText = "Failed to connect to Discord.";
       }
     }
 
-    res.status(200).send('Webhook processed');
-  } catch (error) {
-    console.error('Error delivering message:', error);
-    res.status(500).send('Server Error');
-  }
-});
+    function addLog(text) {
+      const feed = document.getElementById("logFeed");
+      if (feed.children[0] && feed.children[0].innerText === "No messages sent in this session yet.") {
+        feed.innerHTML = "";
+      }
 
-client.once('ready', () => {
-  console.log(`Bot logged in as ${client.user.tag}`);
-  app.listen(process.env.PORT || 3000, () => {
-    console.log(`Webhook server running on port ${process.env.PORT || 3000}`);
-  });
-});
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const item = document.createElement("div");
+      item.className = "log-item";
+      item.innerHTML = `<strong>${time}:</strong> ${text}`;
+      feed.prepend(item);
+    }
+  </script>
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+</body>
+</html>
