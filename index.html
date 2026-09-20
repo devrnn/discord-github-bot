@@ -3,213 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Activity Log Viewer</title>
+  <title>Discord Messenger</title>
   <style>
-    :root {
-      --bg-dark: #202225;
-      --card-bg: #2f3136;
-      --card-border: #202225;
-      --text-main: #dcddde;
-      --text-muted: #b9bbbe;
-      --accent-green: #57f287;
-      --accent-blurple: #5865f2;
-      --code-bg: #1e1f22;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
-
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
+      font-family: Arial, sans-serif;
+      background-color: #36393f;
+      color: #ffffff;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+      height: 100vh;
+      margin: 0;
     }
-
-    .log-card {
-      background-color: var(--card-bg);
+    .card {
+      background-color: #2f3136;
+      padding: 24px;
       border-radius: 8px;
-      border-left: 4px solid var(--accent-blurple);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       width: 100%;
-      max-width: 600px;
-      padding: 16px 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
     }
-
-    /* Header Section */
-    .log-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
+    h2 {
+      margin-top: 0;
+      color: #5865f2;
     }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .user-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .username {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #fff;
-    }
-
-    .repo-name {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .repo-name a {
-      color: var(--accent-blurple);
-      text-decoration: none;
-    }
-
-    .repo-name a:hover {
-      text-decoration: underline;
-    }
-
-    /* Metadata Grid */
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      background: rgba(0, 0, 0, 0.15);
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      font-size: 0.85rem;
-    }
-
-    .meta-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .meta-label {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 700;
-    }
-
-    .meta-value {
-      font-weight: 500;
-    }
-
-    code {
-      background: var(--code-bg);
-      padding: 2px 6px;
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 10px;
       border-radius: 4px;
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 0.82rem;
-      color: #e3e5e8;
+      border: 1px solid #202225;
+      background-color: #40444b;
+      color: #fff;
+      font-size: 14px;
+      resize: none;
+      box-sizing: border-box;
+      margin-bottom: 12px;
     }
-
-    /* Activity Stream */
-    .activity-section {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #5865f2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
     }
-
-    .activity-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 4px;
+    button:hover {
+      background-color: #4752c4;
     }
-
-    .history-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .history-item {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-
-    .timestamp {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-family: monospace;
-      white-space: nowrap;
-    }
-
-    .branch-badge {
-      background-color: rgba(87, 242, 135, 0.1);
-      color: var(--accent-green);
-      font-size: 0.75rem;
-      padding: 1px 6px;
-      border-radius: 12px;
-      border: 1px solid rgba(87, 242, 135, 0.3);
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
-  <div class="log-card">
-    <!-- Header -->
-    <div class="log-header">
-      <img class="avatar" src="https://github.com/identicons/eisakhan.png" alt="User Avatar">
-      <div class="user-info">
-        <span class="username">eisakhan</span>
-        <span class="repo-name">repository: <a href="#">discord-bot-test</a></span>
-      </div>
-    </div>
-
-    <!-- Metadata Grid -->
-    <div class="meta-grid">
-      <div class="meta-item">
-        <span class="meta-label">User Details</span>
-        <span class="meta-value"><code>eisakhan</code> (test@example.com)</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">Latest Commit</span>
-        <span class="meta-value"><code style="color: #5865f2;">#a1b2c3d</code> on <span class="branch-badge">main</span></span>
-      </div>
-    </div>
-
-    <!-- Activity History -->
-    <div class="activity-section">
-      <div class="activity-title">Activity History (2 actions)</div>
-      <ul class="history-list">
-        <li class="history-item">
-          <span class="timestamp">[18:10]</span>
-          <code>a1b2c3d</code>
-          <span>initial commit and logger setup</span>
-        </li>
-        <li class="history-item">
-          <span class="timestamp">[18:12]</span>
-          <code>e5f6g7h</code>
-          <span>updated edit-history logic in index.js</span>
-        </li>
-      </ul>
-    </div>
+  <div class="card">
+    <h2>Send to Discord</h2>
+    <textarea id="message" placeholder="Type your message here..."></textarea>
+    <button onclick="sendMessage()">Send Message</button>
+    <p id="status"></p>
   </div>
+
+  <script>
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1550955330543034419/_ER-T65Hr1l8FTNmO_tIa3Kn_fPg4z4AFvUVTXeKI5tdjPGoLyZ3oo5O1GX_FoRSQ2dc";
+
+    async function sendMessage() {
+      const text = document.getElementById("message").value;
+      const status = document.getElementById("status");
+
+      if (!text.trim()) {
+        status.style.color = "#f04747";
+        status.innerText = "Please enter a message!";
+        return;
+      }
+
+      status.style.color = "#faa61a";
+      status.innerText = "Sending...";
+
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: text })
+        });
+
+        if (response.ok) {
+          status.style.color = "#43b581";
+          status.innerText = "Message sent successfully!";
+          document.getElementById("message").value = "";
+        } else {
+          status.style.color = "#f04747";
+          status.innerText = "Failed to send message.";
+        }
+      } catch (err) {
+        status.style.color = "#f04747";
+        status.innerText = "Error connecting to Discord.";
+      }
+    }
+  </script>
 
 </body>
 </html>
